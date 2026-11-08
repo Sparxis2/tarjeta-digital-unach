@@ -9,7 +9,9 @@ import { defineConfig } from 'vite';
 // https://vitejs.dev/config/
 export default defineConfig({
     optimizeDeps: {
-        noDiscovery: true
+        noDiscovery: true,
+        // jsbarcode es CommonJS: hay que pre-empaquetarlo o la vista no carga
+        include: ['jsbarcode']
     },
     plugins: [
         vue(),

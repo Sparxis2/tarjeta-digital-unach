@@ -1,38 +1,31 @@
 <script setup>
-import { generarRFC } from '@/utils/rfc';
+import { registrarEmpleado } from '@/utils/empleados';
+import { generarClave18, sexoPorNombre } from '@/utils/rfc';
 import JsBarcode from 'jsbarcode';
 import { useToast } from 'primevue/usetoast';
 import { computed, nextTick, onMounted, ref } from 'vue';
 
 const toast = useToast();
 
+// Valores iniciales iguales al mockup
 const form = ref({
     nombre: 'Susana',
     paterno: 'Rojas',
     materno: 'Merida',
-    fecha: new Date(1992, 7, 22),
-    genero: 'F'
+    fecha: '1992-08-22' // input type="date" trabaja con AAAA-MM-DD
 });
 const rfc = ref('');
 const enviado = ref(false);
-
-const generos = [
-    { label: 'Mujer', value: 'F' },
-    { label: 'Hombre', value: 'M' }
-];
+const hoy = new Date().toISOString().slice(0, 10);
 
 // Lo que muestra la tarjeta (se actualiza al presionar GENERAR)
-const tarjeta = ref({ nombre: '', apellidos: '', puesto: '', rfc: '', genero: 'F' });
+const tarjeta = ref({ nombre: '', apellidos: '', puesto: '', rfc: '', sexo: 'M' });
 const barcode = ref(null);
 
 const invalido = (campo) => enviado.value && !String(form.value[campo] ?? '').trim();
 const fechaInvalida = computed(() => enviado.value && !form.value.fecha);
 
-function aISO(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-async function generar() {
+async function generar(registrar = true) {
     enviado.value = true;
     const f = form.value;
     if (!f.nombre.trim() || !f.paterno.trim() || !f.fecha) {
@@ -40,36 +33,46 @@ async function generar() {
         return;
     }
 
-    rfc.value = generarRFC({ nombre: f.nombre, paterno: f.paterno, materno: f.materno, fecha: aISO(f.fecha) });
+    const sexo = sexoPorNombre(f.nombre);
+    rfc.value = generarClave18({ nombre: f.nombre, paterno: f.paterno, materno: f.materno, fecha: f.fecha, sexo });
 
     tarjeta.value = {
         nombre: f.nombre.trim().toUpperCase(),
         apellidos: `${f.paterno} ${f.materno}`.trim().toUpperCase(),
-        puesto: f.genero === 'F' ? 'Empleada' : 'Empleado',
+        puesto: sexo === 'M' ? 'Empleada' : 'Empleado',
         rfc: rfc.value,
-        genero: f.genero
+        sexo
     };
 
     await nextTick();
     dibujarCodigo();
-    toast.add({ severity: 'success', summary: 'Tarjeta generada', detail: `RFC: ${rfc.value}`, life: 2500 });
+
+    if (registrar) {
+        registrarEmpleado({ id: rfc.value, nombre: tarjeta.value.nombre, apellidos: tarjeta.value.apellidos, puesto: tarjeta.value.puesto, sexo, fechaNac: f.fecha });
+        toast.add({ severity: 'success', summary: 'Tarjeta generada', detail: rfc.value, life: 2500 });
+    }
 }
 
 function dibujarCodigo() {
     if (!barcode.value || !tarjeta.value.rfc) return;
-    JsBarcode(barcode.value, tarjeta.value.rfc, {
-        format: 'CODE128',
-        width: 1.6,
-        height: 42,
-        margin: 0,
-        fontSize: 12,
-        textMargin: 3,
-        background: 'transparent',
-        lineColor: '#0b1f3a'
-    });
+    try {
+        JsBarcode(barcode.value, tarjeta.value.rfc, {
+            format: 'CODE128',
+            width: 1.3,
+            height: 42,
+            margin: 0,
+            fontSize: 11,
+            textMargin: 3,
+            background: 'transparent',
+            lineColor: '#0b1f3a'
+        });
+    } catch (e) {
+        console.error('No se pudo dibujar el código de barras', e);
+    }
 }
 
-onMounted(generar);
+// Al abrir la página se muestra la tarjeta de ejemplo (sin registrarla ni mostrar aviso)
+onMounted(() => generar(false));
 </script>
 
 <template>
@@ -98,13 +101,8 @@ onMounted(generar);
 
                 <div class="flex flex-col gap-2">
                     <label for="fecha">Fecha Nacimiento:</label>
-                    <DatePicker id="fecha" v-model="form.fecha" dateFormat="dd/mm/yy" showIcon iconDisplay="input" :maxDate="new Date()" :invalid="fechaInvalida" />
+                    <InputText id="fecha" v-model="form.fecha" type="date" :max="hoy" :invalid="fechaInvalida" />
                     <Message v-if="fechaInvalida" severity="error" size="small" variant="simple">La fecha es obligatoria.</Message>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <label>Género (para la tarjeta):</label>
-                    <SelectButton v-model="form.genero" :options="generos" optionLabel="label" optionValue="value" :allowEmpty="false" />
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -113,7 +111,7 @@ onMounted(generar);
                 </div>
 
                 <div>
-                    <Button label="GENERAR" icon="pi pi-id-card" severity="success" class="w-full sm:w-60" @click="generar" />
+                    <Button label="GENERAR" severity="success" class="w-full sm:w-48 font-bold" @click="generar()" />
                 </div>
             </div>
         </div>
@@ -144,7 +142,7 @@ onMounted(generar);
                     <div class="id-photo">
                         <svg viewBox="0 0 100 100" aria-hidden="true">
                             <circle cx="50" cy="50" r="50" fill="#e8edf3" />
-                            <template v-if="tarjeta.genero === 'F'">
+                            <template v-if="tarjeta.sexo === 'M'">
                                 <path d="M30 52 C28 30 38 20 50 20 C62 20 72 30 70 52 C70 60 66 64 62 66 L38 66 C34 64 30 60 30 52 Z" fill="#0b1f3a" />
                                 <ellipse cx="50" cy="44" rx="13" ry="16" fill="#0b1f3a" />
                                 <path d="M20 100 C22 76 36 68 50 68 C64 68 78 76 80 100 Z" fill="#0b1f3a" />

@@ -19,6 +19,16 @@ const router = createRouter({
                     component: () => import('@/views/pages/TarjetaDigital.vue')
                 },
                 {
+                    path: '/empleados',
+                    name: 'empleados',
+                    component: () => import('@/views/pages/Empleados.vue')
+                },
+                {
+                    path: '/barcode',
+                    name: 'barcode',
+                    component: () => import('@/views/pages/CodigoBarras.vue')
+                },
+                {
                     path: '/uikit/formlayout',
                     name: 'formlayout',
                     component: () => import('@/views/uikit/FormLayout.vue')

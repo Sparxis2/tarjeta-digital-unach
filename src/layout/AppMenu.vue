@@ -11,8 +11,8 @@ const model = ref([
         label: 'Modulos',
         items: [
             { label: 'Demo Clientes', icon: 'pi pi-fw pi-id-card', to: '/formClientes' },
-            { label: 'BarCode-QR', icon: 'pi pi-fw pi-qrcode', to: '/pages/empty' },
-            { label: 'Empleados', icon: 'pi pi-fw pi-users', to: '/pages/crud' },
+            { label: 'BarCode-QR', icon: 'pi pi-fw pi-qrcode', to: '/barcode' },
+            { label: 'Empleados', icon: 'pi pi-fw pi-users', to: '/empleados' },
             { label: 'Graficas', icon: 'pi pi-fw pi-chart-bar', to: '/uikit/charts' },
             { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
             { label: 'Float Label', icon: 'pi pi-fw pi-bookmark', to: '/uikit/formlayout' },

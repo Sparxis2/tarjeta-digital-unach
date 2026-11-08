@@ -98,6 +98,55 @@ function digitoVerificador(rfc12) {
     return d === 10 ? 'A' : String(d);
 }
 
+// ---------------------------------------------------------------------------
+// Clave de 18 caracteres (formato del mockup: ROMS920822MCSRRS09)
+// 4 letras + AAMMDD + sexo (H/M) + entidad (CS = Chiapas) + 3 consonantes internas
+// + diferenciador de siglo (0 antes del 2000, A desde 2000) + dígito verificador
+// ---------------------------------------------------------------------------
+function primeraConsonanteInterna(palabra) {
+    const m = (palabra || '').slice(1).match(/[BCDFGHJKLMNÑPQRSTVWXYZ]/);
+    return m ? (m[0] === 'Ñ' ? 'X' : m[0]) : 'X';
+}
+
+function verificador18(clave17) {
+    const dic = '0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+    let suma = 0;
+    for (let i = 0; i < 17; i++) suma += dic.indexOf(clave17[i]) * (18 - i);
+    return String((10 - (suma % 10)) % 10);
+}
+
+// El formulario del mockup no pide sexo: se estima con el primer nombre
+const MASCULINOS_EN_A = ['JOSHUA', 'LUCA', 'NOAH', 'ELIAS', 'MATIAS', 'TOBIAS', 'JONAS', 'ISAIAS', 'JEREMIAS', 'ZACARIAS', 'BAUTISTA'];
+const FEMENINOS_SIN_A = ['ISABEL', 'RAQUEL', 'MARIBEL', 'CARMEN', 'BEATRIZ', 'INES', 'LUZ', 'ROCIO', 'PILAR', 'CONSUELO', 'ROSARIO', 'SOLEDAD', 'MERCEDES', 'DOLORES', 'IRIS', 'ABIGAIL', 'RUTH', 'ESTHER', 'MIRIAM', 'NOEMI', 'BELEN', 'YOSELIN', 'JOSELIN', 'ITZEL', 'MONSERRAT', 'MARISOL', 'NAYELI', 'ARACELI', 'YARELI'];
+
+export function sexoPorNombre(nombre) {
+    const partes = normalizar(nombre).split(' ').filter(Boolean);
+    const primero = partes[0] || '';
+    if (primero === 'JOSE') return 'H';
+    if (['MARIA', 'MA'].includes(primero)) return 'M';
+    if (MASCULINOS_EN_A.includes(primero)) return 'H';
+    if (FEMENINOS_SIN_A.includes(primero) || primero.endsWith('A')) return 'M';
+    return 'H';
+}
+
+export function generarClave18({ nombre, paterno, materno, fecha, sexo, entidad = 'CS' }) {
+    const s = sexo || sexoPorNombre(nombre);
+    const p = limpiar(paterno);
+    const m = limpiar(materno);
+    const n = nombreParaClave(nombre);
+    const anio = parseInt(String(fecha).slice(0, 4), 10);
+    const clave17 =
+        letrasIniciales(nombre, paterno, materno) +
+        fechaClave(fecha) +
+        s +
+        entidad +
+        primeraConsonanteInterna(p.split(' ')[0]) +
+        primeraConsonanteInterna(m.split(' ')[0]) +
+        primeraConsonanteInterna(n.split(' ')[0]) +
+        (anio < 2000 ? '0' : 'A');
+    return clave17 + verificador18(clave17);
+}
+
 export function generarRFC({ nombre, paterno, materno, fecha }) {
     const base = letrasIniciales(nombre, paterno, materno) + fechaClave(fecha);
     const con = base + homoclave(nombre, paterno, materno);

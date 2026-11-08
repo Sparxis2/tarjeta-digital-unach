@@ -8,16 +8,16 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
 <template>
     <div class="layout-topbar">
         <div class="layout-topbar-logo-container">
-            <button class="layout-menu-button layout-topbar-action" @click="toggleMenu">
-                <i class="pi pi-bars"></i>
-            </button>
             <router-link to="/" class="layout-topbar-logo">
-                <i class="pi pi-graduation-cap" style="font-size: 2rem; color: var(--primary-color)"></i>
-                <span class="flex flex-col leading-tight" style="font-size: 1.05rem">
+                <i class="pi pi-graduation-cap" style="font-size: 2rem; color: var(--text-color)"></i>
+                <span class="flex flex-col leading-tight" style="font-size: 1.15rem; font-weight: 500">
                     <span>Facultad de Negocios</span>
                     <span>UNACH</span>
                 </span>
             </router-link>
+            <button class="layout-menu-button layout-topbar-action" style="margin-left: 1.5rem" @click="toggleMenu">
+                <i class="pi pi-bars"></i>
+            </button>
         </div>
 
         <div class="layout-topbar-actions">
